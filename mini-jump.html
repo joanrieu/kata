@@ -1,6 +1,27 @@
 <html lang="en">
 <meta charset="UTF-8">
 
+<style>
+body                  { font-size: 20px; color: #333; line-height: 1.5; margin: auto; padding: 3em; max-width: 40em; }
+blockquote            { font-size: 14px; font-family: monospace; }
+blockquote em         { font-weight: bold; font-style: inherit; }
+a                     { text-decoration: none; }
+pre, code             { font-size: 14px; color: #353535; background: #f8f8f8; }
+code                  { padding: 5px; }
+pre                   { padding: 15px; border-left: 3px solid lightgrey; }
+pre::before           { display: block; color: grey; font-size: 10px; margin-bottom: 5px; }
+pre.input::before     { content: "INPUT"; }
+pre.output::before    { content: "OUTPUT"; }
+pre.output            { margin-left: 30px; }
+.keyword              { color: #386AC3; }
+.function             { color: #8431C5; }
+.number               { color: #6D8600; }
+.test                 { font-weight: bold; }
+.test.✓               { color: darkgreen; }
+.test.✗               { color: firebrick; }
+big                   { font-size: 200%; }
+</style>
+
 <title>Mini Jump</title>
 
 <h1>Mini Jump</h1>
@@ -128,30 +149,87 @@ function miniJump(jumps) {
 verify()
 </script>
 
+<big>💯</big>
+
+<p>It works!</p>
+
+<p>It works, but it's inefficient. Indeed, this O (2<sup>n</sup>) algorithm computes every possible jump before giving the answer. We will change the order in which we compute solutions from the current depth-first traversal to a breadth-first traversal which will find the shortest path sooner. In other words, instead of finding all paths and then sorting them to find the shortest, we're going to traverse the paths in sorted order right from the start, ensuring that the first path we find is the shortest, thus allowing us to skip all the remaining paths.</p>
+
+<p>Let's first have a look at the performance of the current algorithm.</p>
+
+<script hidden>
+function time(fn) {
+  const log2 = log
+  log = () => {}
+  const a = Date.now()
+  fn()
+  const b = Date.now()
+  log = log2
+  const delta = b - a
+  log(`${fn.name} took ${delta}ms`)
+}
+</script>
+
+<script>
+function bigJump() {
+  return miniJump([
+    10, 10, 10, 10, 10,
+    10, 10, 10, 10, 10,
+    10, 10, 10, 10, 10,
+    10, 10, 10, 10, 10,
+  ])
+}
+
+time(bigJump)
+log(`to compute ${bigJump()} jumps!`)
+</script>
+
+<p>I don't suggest adding other rows of numbers inside <code>bigJump</code> unless you want to freeze this tab long enough to drink a coffee.</p>
+
+<p>To improve the algorithm, we need to switch from recursion to iteration. See <a href="http://www.pathsensitive.com/2019/07/the-best-refactoring-youve-never-heard.html" title="The best refactoring you've never heard of — James Koppel">this talk</a> on defunctionalization.</p>
+
+<p>Let's rewrite the function so the whole path's state is visible instead of being kept in the call stack, and instead of computing the subpaths immediately, put them in a queue.</p>
+
+<script>
+function miniJump(jumps) {
+  if (jumps.includes(0))
+    return -1
+  const done = [{}]
+  const todo = [{
+    count: 0,
+    jumps
+  }]
+  for (const jump of todo)
+    if (doMiniJump(jump, todo))
+      return jump.count
+}
+
+function doMiniJump({ count, jumps }, todo) {
+  if (jumps.length < 2)
+    return true
+  for (let i = 1; i <= jumps[0]; ++i)
+    todo.push({
+      count: count + 1,
+      jumps: jumps.slice(i),
+      todo
+    })
+  return false
+}
+</script>
+
+<script>
+verify()
+</script>
+
+<script>
+time(bigJump)
+</script>
+
 <big>🎉🎉🎉</big>
 
-<!--THE END-->
+<p>Now that's much better! On a larger input, it takes 4 milliseconds instead of 30 seconds. That's enough optimization for today. See you around! 👋</p>
 
-<style>
-body                  { font-size: 20px; color: #333; line-height: 1.5; margin: auto; padding: 3em; max-width: 40em; }
-blockquote            { font-size: 14px; font-family: monospace; }
-blockquote em         { font-weight: bold; font-style: inherit; }
-a                     { text-decoration: none; }
-pre, code             { font-size: 14px; color: #353535; background: #f8f8f8; }
-code                  { padding: 5px; }
-pre                   { padding: 15px; border-left: 3px solid lightgrey; }
-pre::before           { display: block; color: grey; font-size: 10px; margin-bottom: 5px; }
-pre.input::before     { content: "INPUT"; }
-pre.output::before    { content: "OUTPUT"; }
-pre.output            { margin-left: 30px; }
-.keyword              { color: #386AC3; }
-.function             { color: #8431C5; }
-.number               { color: #6D8600; }
-.test                 { font-weight: bold; }
-.test.✓               { color: darkgreen; }
-.test.✗               { color: firebrick; }
-big                   { font-size: 200%; }
-</style>
+<!--THE END-->
 
 <script hidden>
 for (const script of document.querySelectorAll("script:not([hidden])"))
